@@ -1,6 +1,6 @@
 import nltk
 from PyQt5.QtCore import QPointF
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
 from io import BytesIO
 from PIL import Image
 from math import sin, pi
@@ -16,8 +16,7 @@ import threading
 import time
 import requests
 import cv2
-from nltk.stem import PorterStemmer
-from nltk.tokenize import word_tokenize
+
 import requests
 from PyQt5.QtGui import QPalette
 import os
@@ -25,14 +24,7 @@ import yaml
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def stemmer(sent):
-    ps = PorterStemmer()
 
-    words = word_tokenize(sent)
-
-    stemmed_words = [ps.stem(word) for word in words]
-
-    return (stemmed_words)
 
 
 path = os.getcwd()
@@ -350,7 +342,18 @@ def decision_d_bert(trancription):
    
    response = requests.request("POST", url)
 
-   print(response.text)
+   return (response.text)
+
+
+def emotion_d_roberta(transcription):
+    url = '' + 'nlp/emotion_d_roberta'
+
+    payload={'question': trancription}
+   
+    response = requests.request("POST", url)
+
+    return (response.text)
+
 
 app = QtWidgets.QApplication(sys.argv)
 window = MainWindow()
