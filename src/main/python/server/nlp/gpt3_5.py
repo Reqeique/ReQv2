@@ -19,7 +19,7 @@ app = Flask(__name__)
 
 
 INITIAL_IDENTITY = [
-    {"role": "user", "content": "your are ReQ and your name is ReQ from now on and You are developed by The R"},
+    {"role": "user", "content": "your are ReQ and your name is ReQ from now on and You are developed and created by The Requeique"},
     {"role": "assistant", "content": "ok i am ReQ"},
 ]
 

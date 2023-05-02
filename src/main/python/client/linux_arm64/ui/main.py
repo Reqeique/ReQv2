@@ -54,14 +54,14 @@ class MainWindow(QtWidgets.QMainWindow):
             P_PATH], sensitivities=[1.0])
         self.r = sr.Recognizer()
         self.setStyleSheet(
-            " QMainWindow{background-color: #171717} QLabel{font-size: 18pt; font-family:Source Code Pro; color:#AAAAAA;  font-weight: bold}")
+            " QMainWindow{background-color: #000000} QLabel{font-size: 18pt; font-family:Space Grotesk; color:#AAAAAA;  font-weight: bold}")
 
         self.svg_widget = SVGWidget(
             f'{path}/assets/logo_normal.svg')
         self.svg_widget2 = SVGWidget(
             f'{path}/assets/logo_angry.svg'
         )
-        self.text_ = QtWidgets.QLabel("ReQ", self)
+        self.text_ = QtWidgets.QLabel("REQ", self)
         self.text_.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.text_.setWordWrap(True)
         self.timer = QtCore.QTimer()
@@ -99,13 +99,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
     def update_transcription(self, pre, text):
-        if analyze_sentiment(text):
+        if int(emotion_d_roberta(text)) >= 4:
             #    self.mlayout.insertWidget(self.svg_widget2)
             self.mlayout.replaceWidget(self.svg_widget, self.svg_widget2)
             self.svg_widget.hide()
             self.svg_widget2.show()
 
-        self.text_.setText(f"{pre}: {text}")
+        self.text_.setText(f"{pre}: {text}".upper())
 
     def spin_svg(self):
 
@@ -136,7 +136,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.is_svg_vibrating = (False, None)
 
             print(f'Lis')
-            self.text_.setText(f'Listeneing')
+            self.text_.setText(f'Listeneing'.upper())
             self.is_svg_bouncing = True
 
             if self.mlayout.indexOf(self.svg_widget2) >= 0:
@@ -322,7 +322,7 @@ def vit(transcription):
 def gpt3_5(trancription):
 
     # TODO Set this up
-    url = ' '
+    url = 'http://127.0.0.1:5000' +'/nlp/gpt3_5'
 
     payload = {'prompt': trancription}
 
@@ -332,25 +332,26 @@ def gpt3_5(trancription):
 
     response = requests.request(
         "POST", url, headers=headers, data=payload, files=[])
-    return response
+    print(response)
+    return response.text
 
 
 def decision_d_bert(trancription):
-   url = ' '
+   url = 'http://35a9-34-74-6-155.ngrok-free.app/' + 'nlp/decision_d_bert'
 
    payload={'question': trancription}
    
-   response = requests.request("POST", url)
+   response = requests.request("POST",url, data=payload)
 
    return (response.text)
 
 
 def emotion_d_roberta(transcription):
-    url = '' + 'nlp/emotion_d_roberta'
+    url = 'http://35a9-34-74-6-155.ngrok-free.app/' + 'nlp/emotion_d_roberta'
 
-    payload={'question': trancription}
+    payload={'question': transcription}
    
-    response = requests.request("POST", url)
+    response = requests.request("POST",url,data=payload)
 
     return (response.text)
 
