@@ -1,6 +1,6 @@
 import nltk
 from PyQt5.QtCore import QPointF
-
+import argparse
 from io import BytesIO
 from PIL import Image
 from math import sin, pi
@@ -16,6 +16,7 @@ import threading
 import time
 import requests
 import cv2
+from googletrans import Translator
 
 import requests
 from PyQt5.QtGui import QPalette
@@ -24,10 +25,17 @@ import yaml
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-
+parser = argparse.ArgumentParser()
+parser.add_argument('-u', '--url', type=str, help='Enter the URL')
+args = parser.parse_args()
 
 
 path = os.getcwd()
+
+
+def speak(sent: str, lang: str = 'en'):
+    if 'nt' != os.name:
+        os.system('bash ../speech.sh -t {sent} -lang {lang}')
 
 
 with open(f'{path}/keys.yaml') as file:
@@ -47,7 +55,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         self.setWindowTitle('PyQt5 App with Black Title Bar')
-        
+
         self.showFullScreen()
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.porcupine = pvporcupine.create(P_API_KEY, keyword_paths=[
@@ -99,11 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
     def update_transcription(self, pre, text):
-        if int(emotion_d_roberta(text)) >= 4:
-            #    self.mlayout.insertWidget(self.svg_widget2)
-            self.mlayout.replaceWidget(self.svg_widget, self.svg_widget2)
-            self.svg_widget.hide()
-            self.svg_widget2.show()
+        
 
         self.text_.setText(f"{pre}: {text}".upper())
 
@@ -120,9 +124,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def bounce_svg(self):
         self.svg_widget.bounce()
         self.svg_widget.update()
+
     def reset_svg_rotation(self):
         self.angle = 0
-
 
     def reset_svg_vib(self):
         self.svg_widget.reset_vibration()
@@ -140,7 +144,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.is_svg_bouncing = True
 
             if self.mlayout.indexOf(self.svg_widget2) >= 0:
-                
+
                 self.mlayout.replaceWidget(self.svg_widget2, self.svg_widget)
                 self.svg_widget.show()
                 self.svg_widget2.hide()
@@ -172,7 +176,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # recognize speech using Google Speech Recognition
             try:
-                
 
                 transcription = r.recognize_google(audio)
 
@@ -181,12 +184,43 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.is_svg_spinning = True
 
                 # self.is_svg_vibrating = (True, transcription)
-                if(int(decision_d_bert(transcription)) == 1):
-                    self.transcription_signal.emit('',str(vit(transcription)))
-                else:
-                    self.transcription_signal.emit('',str(gpt3_5(transcription)))
+                if (int(decision_d_bert(transcription)) == 1 and not 'write' in transcription.lower() and not 'sing' in transcription.lower()):
+                    vit_ = str(vit(transcription))
 
-               
+                    if ('amharic' in str(transcription).lower()):
+                       
+
+                        translator = Translator(service_urls=['translate.google.com'])
+                        result = translator.translate('Hello', dest='am')
+                        vit_ = (result.pronunciation)
+
+                        speak(vit_, 'cs')
+                    else:
+                        speak(vit_, 'en')
+
+                    self.transcription_signal.emit('', vit_)
+                    self.is_svg_spinning = False
+                    self.is_svg_vibrating = (True, vit_)
+                    
+                else:
+                    gpt3_5_ = str(gpt3_5(transcription))
+                    if ('amharic' in str(transcription).lower()):
+                        translator = Translator(service_urls=['translate.google.com'])
+                        result = translator.translate(gpt3_5_, dest='am')
+                        gpt3_5_ = (result.pronunciation)
+                        speak(gpt3_5_, 'cs')
+                    else:
+                        speak(gpt3_5_, 'en')
+
+                    if int(emotion_d_roberta(gpt3_5_)) >= 4:
+            #    self.mlayout.insertWidget(self.svg_widget2)
+                       self.mlayout.replaceWidget(self.svg_widget, self.svg_widget2)
+                       self.svg_widget.hide()
+                       self.svg_widget2.show()
+                    self.is_svg_vibrating = (True, gpt3_5_)
+                    
+                    self.transcription_signal.emit('', gpt3_5_)
+
             except sr.UnknownValueError:
                 self.transcription_signal.emit(
                     "Error", "Google Speech Recognition could not understand audio")
@@ -223,11 +257,11 @@ class SVGWidget(QtWidgets.QWidget):
         # # painter.setWindow(self.renderer.viewBox())
 
         x = (self.width()/2)
-        if(self.is_bouncing == True):
-          
-          y = (self.height()/2) + (self.bounce_pos.y()*10)
+        if (self.is_bouncing == True):
+
+            y = (self.height()/2) + (self.bounce_pos.y()*10)
         else:
-          y = self.height()/ 2
+            y = self.height() / 2
         w = self.renderer.defaultSize().width()
         h = self.renderer.defaultSize().height()
         if ((self.amplitude / 1000000) > 1):
@@ -261,12 +295,13 @@ class SVGWidget(QtWidgets.QWidget):
         elif (velocity.y() < 0):
             self.bounce_pos = velocity
 
-        print(self.bounce_pos, self._norm(self.bounce_time))
+        # print(self.bounce_pos, self._norm(self.bounce_time))
         if (self.bounce_time == 7):
             self.bounce_acc = -self.bounce_acc
 
     def reset_vibration(self):
         self.index = 0
+
     def reset_angle(self):
         self.angle = 0
 
@@ -297,7 +332,7 @@ def vit(transcription):
 
     # Send the image to the API as a POST request
     # TODO Set this up
-    SERVER_URL = 'http://b207-34-126-120-211.ngrok.io'
+    SERVER_URL = args.url
 
     # Set the data to send in the request
     data = {
@@ -322,7 +357,7 @@ def vit(transcription):
 def gpt3_5(trancription):
 
     # TODO Set this up
-    url = 'http://127.0.0.1:5000' +'/nlp/gpt3_5'
+    url = args.url + '/nlp/gpt3_5'
 
     payload = {'prompt': trancription}
 
@@ -337,21 +372,21 @@ def gpt3_5(trancription):
 
 
 def decision_d_bert(trancription):
-   url = 'http://35a9-34-74-6-155.ngrok-free.app/' + 'nlp/decision_d_bert'
+    url = args.url + 'nlp/decision_d_bert'
 
-   payload={'question': trancription}
-   
-   response = requests.request("POST",url, data=payload)
+    payload = {'question': trancription}
 
-   return (response.text)
+    response = requests.request("POST", url, data=payload)
+
+    return (response.text)
 
 
 def emotion_d_roberta(transcription):
-    url = 'http://35a9-34-74-6-155.ngrok-free.app/' + 'nlp/emotion_d_roberta'
+    url = args.url + 'nlp/emotion_d_roberta'
 
-    payload={'question': transcription}
-   
-    response = requests.request("POST",url,data=payload)
+    payload = {'question': transcription}
+
+    response = requests.request("POST", url, data=payload)
 
     return (response.text)
 
