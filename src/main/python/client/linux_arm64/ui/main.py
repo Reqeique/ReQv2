@@ -29,9 +29,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 path = os.getcwd()
 
-def speak(string):
-    os.system(f"./speech.sh "/{string}/"")
-
 
 with open(f'{path}/keys.yaml') as file:
     kfk = yaml.safe_load(file)['keys']
@@ -185,21 +182,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 # self.is_svg_vibrating = (True, transcription)
                 if(int(decision_d_bert(transcription)) == 1):
-                    vit_result = str(vit(transcription))
-                    speak(vit_result)
-                    self.transcription_signal.emit('',vit_result)
+                    self.transcription_signal.emit('',str(vit(transcription)))
                 else:
-                    gpt3_5_result = str(vit(transcription))
-                    speak(gpt3_5_result)
-                    self.transcription_signal.emit('',gpt3_5_result)
+                    self.transcription_signal.emit('',str(gpt3_5(transcription)))
 
                
             except sr.UnknownValueError:
                 self.transcription_signal.emit(
-                    "Error", "could not understand audio")
+                    "Error", "Google Speech Recognition could not understand audio")
             except sr.RequestError as e:
                 self.transcription_signal.emit("Error",
-                                               "It looks like broken network; {0}".format(e))
+                                               "Could not request results from Google Speech Recognition service; {0}".format(e))
 
     def closeEvent(self, event):
         self.audio_stream.stop_stream()
