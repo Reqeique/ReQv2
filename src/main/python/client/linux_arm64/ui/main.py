@@ -350,7 +350,7 @@ def vit(transcription):
     # Print the response from the API
     print(response.text)
 
-    return f'<b>{answer}</b>'
+    return f'{answer}'
 
     # Release the camera resource
 
