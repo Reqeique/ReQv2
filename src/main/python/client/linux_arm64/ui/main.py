@@ -13,6 +13,7 @@ import speech_recognition as sr
 from PyQt5 import QtWidgets, QtCore, QtGui, QtSvg
 import speech_recognition as sr
 import threading
+from dimits.main import Dimits
 import time
 import requests
 import cv2
@@ -34,8 +35,8 @@ path = os.getcwd()
 
 
 def speak(sent: str, lang: str = 'en'):
-    if 'nt' != os.name:
-        os.system('bash ../speech.sh -t {sent} -lang {lang}')
+    d = Dimits('voice-en-us-danny-low')
+    d.text_2_speech(sent)
 
 
 with open(f'{path}/keys.yaml') as file:
